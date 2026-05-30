@@ -125,11 +125,11 @@ export const QUESTIONS: Question[] = [
   },
   {
     category: '特殊状態',
-    question: '「どく」状態のポケモンは、各ターンの終わりにHPがいくつ減りますか？',
+    question: '「どく」状態のポケモンは、ポケモンチェックのたびにHPがいくつ減りますか？',
     options: ['10', '20', '30', '50'],
-    correct: 1,
+    correct: 0,
     explanation:
-      'どく状態のポケモンは、各ターンの終わりにHPが<strong>20</strong>減ります（どくマーカーを置いて管理します）。',
+      'どく状態のポケモンは、ポケモンチェックのたびにダメカンを1個（<strong>HP10</strong>）乗せます。',
   },
   {
     category: '特殊状態',
