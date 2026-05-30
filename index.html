@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ポケモンカード ルールクイズ</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --red: #E3350D;
+            --red-dark: #b02b0a;
+            --yellow: #FFDE00;
+            --blue: #003A8C;
+            --correct: #27ae60;
+            --incorrect: #e74c3c;
+            --green-bg: #f0fff4;
+            --red-bg: #fff5f5;
+            --text: #1a202c;
+            --muted: #718096;
+            --bg: #eef2f7;
+            --white: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Hiragino Kaku Gothic Pro', 'Yu Gothic UI', 'Meiryo', 'Segoe UI', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── HEADER ── */
+        .app-header {
+            background: linear-gradient(155deg, #e8390f 0%, #9b2308 100%);
+            padding: 1.1rem 1.5rem 2.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .app-header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; left: 50%; transform: translateX(-50%);
+            width: 130%; height: 36px;
+            background: var(--bg);
+            border-radius: 50% 50% 0 0;
+        }
+        .header-inner { display: flex; align-items: center; justify-content: center; gap: 0.75rem; }
+        .header-title { color: #fff; font-size: 1.4rem; font-weight: 900; text-shadow: 1px 2px 5px rgba(0,0,0,0.35); }
+        .header-sub { color: rgba(255,255,255,0.82); font-size: 0.8rem; margin-top: 0.2rem; }
+
+        /* ── MAIN ── */
+        main { flex: 1; max-width: 680px; width: 100%; margin: 0 auto; padding: 1.5rem 1rem 2.5rem; }
+
+        /* ── SCREENS ── */
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeUp 0.35s ease; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── START ── */
+        .start-card {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 2rem 1.75rem;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.09);
+            text-align: center;
+        }
+        .start-icon { font-size: 4rem; display: block; margin-bottom: 0.5rem; }
+        .start-card h2 { font-size: 1.4rem; color: var(--text); margin-bottom: 0.75rem; }
+        .start-desc { color: var(--muted); font-size: 0.92rem; line-height: 1.75; margin-bottom: 1.5rem; }
+        .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; justify-content: center; margin-bottom: 2rem; }
+        .chip {
+            background: #eef2ff; color: #4338ca;
+            padding: 0.3rem 0.8rem; border-radius: 100px;
+            font-size: 0.78rem; font-weight: 700;
+        }
+        .btn-start {
+            display: inline-flex; align-items: center; gap: 0.45rem;
+            background: linear-gradient(135deg, var(--red), var(--red-dark));
+            color: #fff; border: none;
+            padding: 0.9rem 2.5rem; border-radius: 100px;
+            font-size: 1.05rem; font-weight: 800; cursor: pointer;
+            box-shadow: 0 5px 20px rgba(227,53,13,0.38);
+            transition: transform 0.15s, box-shadow 0.15s;
+            font-family: inherit;
+        }
+        .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(227,53,13,0.48); }
+        .btn-start:active { transform: translateY(0); }
+
+        /* ── PROGRESS ── */
+        .progress-wrap { margin-bottom: 1rem; }
+        .progress-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+        .q-count { font-size: 0.84rem; color: var(--muted); font-weight: 600; }
+        .q-score { font-size: 0.84rem; color: var(--correct); font-weight: 700; }
+        .progress-track { height: 7px; background: var(--border); border-radius: 10px; overflow: hidden; }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--red), var(--yellow));
+            border-radius: 10px;
+            transition: width 0.45s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        /* ── QUESTION CARD ── */
+        .q-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 6px 28px rgba(0,0,0,0.07);
+            margin-bottom: 0.85rem;
+        }
+        .q-label {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            background: var(--red); color: #fff;
+            padding: 0.2rem 0.75rem; border-radius: 100px;
+            font-size: 0.75rem; font-weight: 800; margin-bottom: 0.75rem;
+        }
+        .q-category { font-size: 0.74rem; color: var(--muted); margin-bottom: 0.55rem; }
+        .q-text { font-size: 1.08rem; font-weight: 800; color: var(--text); line-height: 1.55; }
+
+        /* ── OPTIONS ── */
+        .options-list { display: grid; gap: 0.6rem; }
+        .option {
+            display: flex; align-items: center; gap: 0.8rem;
+            width: 100%; padding: 0.85rem 1.1rem;
+            background: #f8faff; border: 2px solid var(--border);
+            border-radius: 14px;
+            font-size: 0.91rem; color: var(--text); font-weight: 600;
+            cursor: pointer; text-align: left;
+            transition: border-color 0.15s, background 0.15s, transform 0.15s;
+            font-family: inherit;
+        }
+        .option:hover:not(:disabled) {
+            border-color: var(--red); background: #fff7f6;
+            transform: translateX(4px);
+        }
+        .option:disabled { cursor: default; }
+        .option-badge {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 0.8rem; flex-shrink: 0;
+            transition: background 0.2s, color 0.2s;
+        }
+        .option.is-correct { border-color: var(--correct); background: var(--green-bg); }
+        .option.is-correct .option-badge { background: var(--correct); color: #fff; }
+        .option.is-wrong { border-color: var(--incorrect); background: var(--red-bg); }
+        .option.is-wrong .option-badge { background: var(--incorrect); color: #fff; }
+        .option.is-muted { opacity: 0.35; }
+
+        /* ── EXPLANATION ── */
+        .explanation {
+            border-radius: 16px; padding: 1.1rem 1.3rem;
+            margin-top: 0.85rem;
+            animation: slideUp 0.28s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .explanation.correct { background: var(--green-bg); border: 2px solid #9ae6b4; }
+        .explanation.wrong   { background: var(--red-bg);   border: 2px solid #feb2b2; }
+        .expl-head { font-weight: 800; font-size: 0.95rem; margin-bottom: 0.35rem; }
+        .explanation.correct .expl-head { color: var(--correct); }
+        .explanation.wrong   .expl-head { color: var(--incorrect); }
+        .expl-body { font-size: 0.875rem; line-height: 1.72; color: var(--text); }
+        .expl-body strong { color: var(--red-dark); }
+
+        /* ── NEXT BUTTON ── */
+        .btn-next {
+            width: 100%; margin-top: 0.7rem; padding: 0.9rem;
+            background: linear-gradient(135deg, var(--blue), #0056c7);
+            color: #fff; border: none; border-radius: 14px;
+            font-size: 0.98rem; font-weight: 800; cursor: pointer;
+            font-family: inherit;
+            box-shadow: 0 4px 16px rgba(0,58,140,0.25);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .btn-next:hover { transform: translateY(-2px); box-shadow: 0 7px 22px rgba(0,58,140,0.35); }
+
+        /* ── RESULT ── */
+        .result-card {
+            background: var(--white);
+            border-radius: 24px; padding: 2rem 1.75rem;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.09);
+            text-align: center;
+        }
+        .rank-emoji {
+            font-size: 5rem; display: block; margin-bottom: 0.5rem;
+            animation: popIn 0.55s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes popIn {
+            from { transform: scale(0.4); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+        .rank-title { font-size: 1.5rem; font-weight: 900; color: var(--text); margin-bottom: 0.3rem; }
+        .rank-sub   { color: var(--muted); font-size: 0.88rem; margin-bottom: 1.4rem; }
+        .score-big  { font-size: 3.2rem; font-weight: 900; color: var(--red); }
+        .score-of   { color: var(--muted); font-size: 0.92rem; margin-bottom: 1.2rem; }
+        .pct-track  { background: var(--border); height: 13px; border-radius: 10px; overflow: hidden; margin-bottom: 1.4rem; }
+        .pct-bar    {
+            height: 100%; border-radius: 10px;
+            background: linear-gradient(90deg, var(--red), var(--yellow));
+            width: 0%; transition: width 1.1s ease;
+        }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.4rem; }
+        .stat-box   { background: #f8faff; border-radius: 14px; padding: 1rem; }
+        .stat-val   { font-size: 1.8rem; font-weight: 900; display: block; }
+        .stat-val.g { color: var(--correct); }
+        .stat-val.r { color: var(--incorrect); }
+        .stat-lbl   { font-size: 0.77rem; color: var(--muted); }
+        .rank-msg {
+            background: linear-gradient(135deg, #5c6bc0, #7e57c2);
+            color: #fff; border-radius: 14px;
+            padding: 1rem 1.2rem; font-size: 0.875rem; line-height: 1.68;
+            text-align: left; margin-bottom: 1.4rem;
+        }
+        .btn-retry {
+            width: 100%; padding: 0.9rem;
+            background: linear-gradient(135deg, var(--red), var(--red-dark));
+            color: #fff; border: none; border-radius: 14px;
+            font-size: 1rem; font-weight: 800; cursor: pointer;
+            font-family: inherit;
+            box-shadow: 0 5px 18px rgba(227,53,13,0.35);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .btn-retry:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(227,53,13,0.45); }
+
+        @media (max-width: 460px) {
+            .header-title { font-size: 1.15rem; }
+            .q-text { font-size: 0.98rem; }
+            .option { font-size: 0.85rem; padding: 0.75rem 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="app-header">
+    <div class="header-inner">
+        <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="18" cy="18" r="17" fill="white"/>
+            <path d="M 1 18 A 17 17 0 0 1 35 18 Z" fill="#E3350D"/>
+            <circle cx="18" cy="18" r="17" fill="none" stroke="rgba(0,0,0,0.2)" stroke-width="1.5"/>
+            <line x1="1" y1="18" x2="35" y2="18" stroke="rgba(0,0,0,0.2)" stroke-width="1.5"/>
+            <circle cx="18" cy="18" r="6" fill="white" stroke="rgba(0,0,0,0.2)" stroke-width="1.5"/>
+            <circle cx="18" cy="18" r="3" fill="#d8d8d8"/>
+        </svg>
+        <div>
+            <div class="header-title">ポケモンカード ルールクイズ</div>
+            <div class="header-sub">初心者向け・全20問</div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <!-- START SCREEN -->
+    <div id="startScreen" class="screen active">
+        <div class="start-card">
+            <span class="start-icon">🎴</span>
+            <h2>クイズをはじめよう！</h2>
+            <p class="start-desc">
+                ポケモンカードゲームの基本ルールをどれだけ知っているか試してみよう！<br>
+                全20問・4択形式で、答えのあとに解説がつきます。
+            </p>
+            <div class="chips">
+                <span class="chip">デッキの構成</span>
+                <span class="chip">ターンの流れ</span>
+                <span class="chip">特殊状態</span>
+                <span class="chip">カードの種類</span>
+                <span class="chip">勝利条件</span>
+                <span class="chip">エネルギー</span>
+            </div>
+            <button class="btn-start" onclick="startQuiz()">▶ クイズをスタート</button>
+        </div>
+    </div>
+
+    <!-- QUIZ SCREEN -->
+    <div id="quizScreen" class="screen">
+        <div class="progress-wrap">
+            <div class="progress-meta">
+                <span class="q-count" id="qCount">問題 1 / 20</span>
+                <span class="q-score" id="qScore">✓ 0 正解</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-bar" id="progressBar" style="width:0%"></div>
+            </div>
+        </div>
+
+        <div class="q-card">
+            <div class="q-label" id="qLabel">Q1</div>
+            <div class="q-category" id="qCategory"></div>
+            <div class="q-text" id="qText"></div>
+        </div>
+
+        <div class="options-list" id="optionsList"></div>
+        <div id="explanationBox"></div>
+        <div id="nextBtnWrap" style="display:none">
+            <button class="btn-next" id="nextBtn" onclick="nextQuestion()">次の問題へ →</button>
+        </div>
+    </div>
+
+    <!-- RESULT SCREEN -->
+    <div id="resultScreen" class="screen">
+        <div class="result-card">
+            <span class="rank-emoji" id="rankEmoji">🏆</span>
+            <div class="rank-title" id="rankTitle"></div>
+            <div class="rank-sub"   id="rankSub"></div>
+            <div class="score-big"  id="scoreBig"></div>
+            <div class="score-of">問正解 / 20問中</div>
+            <div class="pct-track"><div class="pct-bar" id="pctBar"></div></div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-val g" id="correctCount">0</span>
+                    <span class="stat-lbl">✅ 正解</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-val r" id="wrongCount">0</span>
+                    <span class="stat-lbl">❌ 不正解</span>
+                </div>
+            </div>
+            <div class="rank-msg" id="rankMsg"></div>
+            <button class="btn-retry" onclick="startQuiz()">🔄 もう一度チャレンジ</button>
+        </div>
+    </div>
+</main>
+
+<script>
+const QUESTIONS = [
+    {
+        category: "デッキの構成",
+        question: "ポケモンカードのデッキは何枚で構成しますか？",
+        options: ["40枚", "50枚", "60枚", "80枚"],
+        correct: 2,
+        explanation: "ポケモンカードのデッキは必ず<strong>60枚ちょうど</strong>で構成する必要があります。多くても少なくても対戦できません。"
+    },
+    {
+        category: "ゲームの準備",
+        question: "ゲーム開始時に最初に引く手札は何枚ですか？",
+        options: ["5枚", "6枚", "7枚", "8枚"],
+        correct: 2,
+        explanation: "ゲーム開始時はデッキをシャッフルして<strong>7枚</strong>引きます。手札にたねポケモンがない場合は、マリガン（引き直し）が可能です。"
+    },
+    {
+        category: "ゲームの準備",
+        question: "ゲーム開始時に裏向きで置く「サイドカード」は何枚ですか？",
+        options: ["4枚", "5枚", "6枚", "7枚"],
+        correct: 2,
+        explanation: "ゲーム開始時にデッキから<strong>6枚</strong>をサイドとして裏向きに置きます。相手のポケモンをきぜつさせるたびに1枚取れ、全部取ると勝ちです。"
+    },
+    {
+        category: "基本ルール",
+        question: "ベンチに置けるポケモンの最大数は何体ですか？",
+        options: ["3体", "4体", "5体", "6体"],
+        correct: 2,
+        explanation: "ベンチには最大<strong>5体</strong>のポケモンを置けます。バトル場の1体と合わせると、場に最大6体のポケモンを出せます。"
+    },
+    {
+        category: "ターンの流れ",
+        question: "バトル場（アクティブ）に出せるポケモンは何体ですか？",
+        options: ["1体", "2体", "3体", "制限なし"],
+        correct: 0,
+        explanation: "バトル場に出せるのは<strong>1体だけ</strong>です。この1体が相手のバトルポケモンと向き合って戦います。"
+    },
+    {
+        category: "ターンの流れ",
+        question: "1ターンに手札から貼れるエネルギーカードの枚数は？",
+        options: ["制限なし", "2枚まで", "1枚だけ", "ポケモン1体につき1枚"],
+        correct: 2,
+        explanation: "1ターンに手札から貼れるエネルギーは<strong>1枚だけ</strong>です。どのポケモンに貼るかは自分で選べます。"
+    },
+    {
+        category: "進化のルール",
+        question: "そのターンに場に出したたねポケモンを、同じターン中に進化させることはできますか？",
+        options: ["できる", "できない", "エネルギーが2枚あればできる", "相手の了承があればできる"],
+        correct: 1,
+        explanation: "<strong>できません</strong>。そのターンに出したばかりのポケモンは同じターンに進化させられません。次のターン以降に進化できます（一部の例外カードを除く）。"
+    },
+    {
+        category: "ターンの流れ",
+        question: "先攻プレイヤーの最初のターンにできないことはどれですか？",
+        options: ["ポケモンをベンチに出す", "エネルギーカードを貼る", "グッズカードを使う", "ワザを使う"],
+        correct: 3,
+        explanation: "先攻の最初のターンは<strong>ワザを使うことができません</strong>。ポケモンを出す・エネルギーを貼る・グッズを使うなどは通常通り行えます。"
+    },
+    {
+        category: "勝利条件",
+        question: "ポケモンカードゲームの勝利条件に含まれないものはどれですか？",
+        options: ["サイドカードを6枚すべて取る", "相手がターン開始時にカードを引けない（デッキ切れ）", "相手のバトル・ベンチポケモンをすべてきぜつさせる", "相手のエネルギーカードをすべてトラッシュする"],
+        correct: 3,
+        explanation: "勝利条件は①サイドを6枚すべて取る ②相手がデッキ切れでカードを引けない ③相手の全ポケモンがきぜつする の3つです。<strong>エネルギーをすべて取り除く</strong>という条件はありません。"
+    },
+    {
+        category: "カードの種類",
+        question: "「トレーナーズカード」に含まれないカードはどれですか？",
+        options: ["サポート", "グッズ", "スタジアム", "エネルギー"],
+        correct: 3,
+        explanation: "トレーナーズカードは「サポート」「グッズ」「スタジアム」の3種類です。<strong>エネルギーカード</strong>はトレーナーズカードとは別のカテゴリです。"
+    },
+    {
+        category: "カードの種類",
+        question: "サポートカードは1ターンに何枚使えますか？",
+        options: ["何枚でも使える", "1枚だけ", "2枚まで", "手札の枚数分"],
+        correct: 1,
+        explanation: "サポートカードは1ターンに<strong>1枚だけ</strong>しか使えません。ゲームへの影響が大きいため、この制限が設けられています。"
+    },
+    {
+        category: "カードの種類",
+        question: "スタジアムカードについて正しい説明はどれですか？",
+        options: ["1ターンに何枚でも使える", "場には1枚しか存在できない", "自分のポケモンにしか効果がない", "使用後すぐにトラッシュされる"],
+        correct: 1,
+        explanation: "スタジアムカードは場に<strong>1枚しか置けません</strong>。新しいスタジアムが出されると古いものはトラッシュされます。効果は特記なければ両プレイヤーに影響します。"
+    },
+    {
+        category: "デッキの構成",
+        question: "デッキに同じカード名のカードは最大何枚まで入れられますか？（基本エネルギー除く）",
+        options: ["1枚", "2枚", "3枚", "4枚"],
+        correct: 3,
+        explanation: "基本エネルギーカードを除き、同じカード名のカードはデッキに<strong>最大4枚</strong>まで入れられます。5枚以上は使えません。"
+    },
+    {
+        category: "バトルの基本",
+        question: "「にげる」を宣言した時、エネルギーはどうなりますか？",
+        options: ["手札に戻る", "デッキに戻る", "トラッシュに置く", "次のターンも使える"],
+        correct: 2,
+        explanation: "にげるを宣言すると、にげるコストの分だけそのポケモンについているエネルギーを<strong>トラッシュ</strong>に置きます。"
+    },
+    {
+        category: "特別なポケモン",
+        question: "exポケモン（リザードンexなど）がきぜつした時、相手は何枚のサイドカードを取れますか？",
+        options: ["1枚", "2枚", "3枚", "取れない"],
+        correct: 1,
+        explanation: "exポケモンやVポケモンなど、強力な特別なポケモンがきぜつした場合、相手はサイドカードを<strong>2枚</strong>取ることができます（通常のポケモンは1枚）。"
+    },
+    {
+        category: "特殊状態",
+        question: "「どく」状態のポケモンは、各ターンの終わりにHPがいくつ減りますか？",
+        options: ["10", "20", "30", "50"],
+        correct: 1,
+        explanation: "どく状態のポケモンは、各ターンの終わりにHPが<strong>20</strong>減ります（どくマーカーを置いて管理します）。"
+    },
+    {
+        category: "特殊状態",
+        question: "「やけど」状態のポケモンは、ターン終了時にどうなりますか？",
+        options: ["必ず30ダメージを受ける", "コインを投げ、ウラなら30ダメージ・オモテなら回復", "コインを投げ、オモテなら30ダメージ・ウラなら回復", "自動で回復する"],
+        correct: 1,
+        explanation: "やけど状態はターン終了時に<strong>コインを投げ、ウラが出ると30ダメージ</strong>を受けます。オモテが出るとやけどが回復します。"
+    },
+    {
+        category: "特殊状態",
+        question: "「ねむり」状態のポケモンが、ターン終了時のコイン判定で回復するのはどの時ですか？",
+        options: ["ウラが出た時", "オモテが出た時", "コインに関係なく自動回復", "次の自分のターン開始時"],
+        correct: 1,
+        explanation: "ねむり状態はターン終了時に<strong>コインを投げてオモテが出ると回復</strong>します。ウラだとそのまま眠り続けます。なお、ベンチに引っ込んだ時もすべての特殊状態が回復します。"
+    },
+    {
+        category: "特殊状態",
+        question: "「こんらん」状態でワザを使う時、コインを投げてウラが出るとどうなりますか？",
+        options: ["ワザが失敗し何も起きない", "自分のバトルポケモンに30ダメージを受ける", "相手に10ダメージを与える", "こんらんが回復する"],
+        correct: 1,
+        explanation: "こんらん状態でワザを使う時にコインを投げてウラが出ると、<strong>自分のバトルポケモンに30ダメージ</strong>を受けてワザは失敗します。オモテならワザは通常通り成功します。"
+    },
+    {
+        category: "特殊状態",
+        question: "「マヒ」状態のポケモンの説明として正しいのはどれですか？",
+        options: ["ワザは使えるが、にげることはできない", "ワザもにげることもできない", "HPが毎ターン10減る", "次の自分のターンに自動でこんらん状態になる"],
+        correct: 1,
+        explanation: "マヒ状態のポケモンは<strong>ワザもにげることもできません</strong>。マヒは次の自分のターン終了時に自動的に回復します。"
+    }
+];
+
+const RANKS = [
+    { min: 100, emoji: '🏆', title: 'チャンピオン！', sub: '全問正解！完璧です！', msg: 'ポケモンカードのルールを完全にマスターしています！自信を持って対戦に臨めます。友達にルールを教えてあげられるレベルです！' },
+    { min: 80,  emoji: '⭐', title: 'ジムリーダー級！', sub: 'すばらしい成績です！', msg: 'ほとんどのルールをしっかり理解しています！間違えた問題を確認して、さらに完璧なルール知識を目指しましょう。' },
+    { min: 60,  emoji: '🌟', title: 'ライバルトレーナー！', sub: 'なかなかの実力です！', msg: '基本的なルールは理解できています。少し難しい問題もあったかもしれませんが、もう一度チャレンジしてさらに上を目指しましょう！' },
+    { min: 40,  emoji: '🎮', title: 'トレーナー見習い！', sub: 'まだまだこれからです！', msg: 'ルールを覚えている途中ですね。ポケモンカードのルールは少し複雑ですが、何度も挑戦することで必ず覚えられます！' },
+    { min: 0,   emoji: '🔰', title: 'はじめてのトレーナー！', sub: 'これから一緒に学びましょう！', msg: 'ポケモンカードのルールはまだこれから覚えていくところですね。公式のルールブックや解説動画も参考にしながら、何度でも挑戦してみてください！' }
+];
+
+let state = { questions: [], idx: 0, score: 0, answered: false };
+
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function startQuiz() {
+    state = { questions: shuffle(QUESTIONS), idx: 0, score: 0, answered: false };
+    showScreen('quizScreen');
+    renderQuestion();
+}
+
+function renderQuestion() {
+    const { questions, idx, score } = state;
+    const q = questions[idx];
+    const total = questions.length;
+
+    document.getElementById('qCount').textContent = `問題 ${idx + 1} / ${total}`;
+    document.getElementById('qScore').textContent = `✓ ${score} 正解`;
+    document.getElementById('progressBar').style.width = `${(idx / total) * 100}%`;
+    document.getElementById('qLabel').textContent = `Q${idx + 1}`;
+    document.getElementById('qCategory').textContent = `カテゴリ：${q.category}`;
+    document.getElementById('qText').textContent = q.question;
+
+    const letters = ['A', 'B', 'C', 'D'];
+    document.getElementById('optionsList').innerHTML = q.options.map((opt, i) => `
+        <button class="option" onclick="handleAnswer(${i})">
+            <span class="option-badge">${letters[i]}</span>
+            <span>${opt}</span>
+        </button>
+    `).join('');
+
+    document.getElementById('explanationBox').innerHTML = '';
+    document.getElementById('nextBtnWrap').style.display = 'none';
+    state.answered = false;
+}
+
+function handleAnswer(sel) {
+    if (state.answered) return;
+    state.answered = true;
+
+    const q = state.questions[state.idx];
+    const ok = sel === q.correct;
+    if (ok) state.score++;
+
+    document.querySelectorAll('.option').forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === q.correct) btn.classList.add('is-correct');
+        else if (i === sel)  btn.classList.add('is-wrong');
+        else                 btn.classList.add('is-muted');
+    });
+
+    document.getElementById('explanationBox').innerHTML = `
+        <div class="explanation ${ok ? 'correct' : 'wrong'}">
+            <div class="expl-head">${ok ? '✅ 正解！' : '❌ 不正解...'}</div>
+            <div class="expl-body">${q.explanation}</div>
+        </div>
+    `;
+
+    const isLast = state.idx === state.questions.length - 1;
+    document.getElementById('nextBtn').textContent = isLast ? '結果を見る 🏆' : '次の問題へ →';
+    document.getElementById('nextBtnWrap').style.display = 'block';
+    document.getElementById('qScore').textContent = `✓ ${state.score} 正解`;
+}
+
+function nextQuestion() {
+    if (state.idx === state.questions.length - 1) {
+        showResult();
+        return;
+    }
+    state.idx++;
+    renderQuestion();
+
+    // re-trigger animation
+    const qs = document.getElementById('quizScreen');
+    qs.classList.remove('active');
+    void qs.offsetWidth;
+    qs.classList.add('active');
+}
+
+function showResult() {
+    showScreen('resultScreen');
+    const { score, questions } = state;
+    const total = questions.length;
+    const pct = Math.round((score / total) * 100);
+    const rank = RANKS.find(r => pct >= r.min);
+
+    document.getElementById('rankEmoji').textContent  = rank.emoji;
+    document.getElementById('rankTitle').textContent  = rank.title;
+    document.getElementById('rankSub').textContent    = rank.sub;
+    document.getElementById('scoreBig').textContent   = score;
+    document.getElementById('correctCount').textContent = score;
+    document.getElementById('wrongCount').textContent   = total - score;
+    document.getElementById('rankMsg').textContent    = rank.msg;
+
+    setTimeout(() => { document.getElementById('pctBar').style.width = pct + '%'; }, 80);
+}
+</script>
+</body>
+</html>
