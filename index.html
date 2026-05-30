@@ -243,12 +243,16 @@
 <header class="app-header">
     <div class="header-inner">
         <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="18" cy="18" r="17" fill="white"/>
-            <path d="M 1 18 A 17 17 0 0 1 35 18 Z" fill="#E3350D"/>
-            <circle cx="18" cy="18" r="17" fill="none" stroke="rgba(0,0,0,0.2)" stroke-width="1.5"/>
-            <line x1="1" y1="18" x2="35" y2="18" stroke="rgba(0,0,0,0.2)" stroke-width="1.5"/>
-            <circle cx="18" cy="18" r="6" fill="white" stroke="rgba(0,0,0,0.2)" stroke-width="1.5"/>
-            <circle cx="18" cy="18" r="3" fill="#d8d8d8"/>
+            <!-- back card -->
+            <rect x="11" y="6" width="20" height="26" rx="3" fill="rgba(255,255,255,0.35)"/>
+            <!-- front card -->
+            <rect x="6" y="4" width="20" height="26" rx="3" fill="white"/>
+            <!-- header bar -->
+            <rect x="9" y="8" width="14" height="3" rx="1.5" fill="#E3350D" opacity="0.9"/>
+            <!-- content lines -->
+            <rect x="9" y="14" width="14" height="2" rx="1" fill="#ddd"/>
+            <rect x="9" y="18" width="10" height="2" rx="1" fill="#ddd"/>
+            <rect x="9" y="22" width="12" height="2" rx="1" fill="#ddd"/>
         </svg>
         <div>
             <div class="header-title">ポケモンカード ルールクイズ</div>
@@ -328,6 +332,11 @@
         </div>
     </div>
 </main>
+
+<footer style="text-align:center; padding: 0.75rem 1rem 1.5rem; font-size: 0.72rem; color: #aaa; max-width: 680px; margin: 0 auto; line-height: 1.6;">
+    ※ 本アプリは非公式のファン制作物です。任天堂・クリーチャーズ・ゲームフリークとは一切関係ありません。<br>
+    ポケモン・ポケモンカードゲームは株式会社ポケモン・任天堂・クリーチャーズ・ゲームフリークの著作物・登録商標です。
+</footer>
 
 <script>
 const QUESTIONS = [
@@ -475,7 +484,7 @@ const QUESTIONS = [
 
 const RANKS = [
     { min: 100, emoji: '🏆', title: 'チャンピオン！', sub: '全問正解！完璧です！', msg: 'ポケモンカードのルールを完全にマスターしています！自信を持って対戦に臨めます。友達にルールを教えてあげられるレベルです！' },
-    { min: 80,  emoji: '⭐', title: 'ジムリーダー級！', sub: 'すばらしい成績です！', msg: 'ほとんどのルールをしっかり理解しています！間違えた問題を確認して、さらに完璧なルール知識を目指しましょう。' },
+    { min: 80,  emoji: '⭐', title: 'ベテラントレーナー！', sub: 'すばらしい成績です！', msg: 'ほとんどのルールをしっかり理解しています！間違えた問題を確認して、さらに完璧なルール知識を目指しましょう。' },
     { min: 60,  emoji: '🌟', title: 'ライバルトレーナー！', sub: 'なかなかの実力です！', msg: '基本的なルールは理解できています。少し難しい問題もあったかもしれませんが、もう一度チャレンジしてさらに上を目指しましょう！' },
     { min: 40,  emoji: '🎮', title: 'トレーナー見習い！', sub: 'まだまだこれからです！', msg: 'ルールを覚えている途中ですね。ポケモンカードのルールは少し複雑ですが、何度も挑戦することで必ず覚えられます！' },
     { min: 0,   emoji: '🔰', title: 'はじめてのトレーナー！', sub: 'これから一緒に学びましょう！', msg: 'ポケモンカードのルールはまだこれから覚えていくところですね。公式のルールブックや解説動画も参考にしながら、何度でも挑戦してみてください！' }
